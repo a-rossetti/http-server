@@ -21,13 +21,13 @@ This is a simple HTTP server written in C++. It serves static files such as HTML
 
 Ensure your project directory has the following structure:
 
-http-server/
-├── _site/
-│ ├── index.html
-│ ├── styles.css
-│ ├── script.js
-│ └── other files...
-└── http_server.cpp
+http-server/            <br>
+├── _site/              <br>
+│ ├── index.html        <br>
+│ ├── styles.css        <br>
+│ ├── script.js         <br>
+│ └── other files...    <br>
+└── http_server.cpp     <br>
 
 ### Running the Server
 
