@@ -5,12 +5,12 @@
 http_server
 
 # Ignore test files
-.html
-.css
-.js
-.jpg
-.jpeg
-.png
+*.html
+*.css
+*.js
+*.jpg
+*.jpeg
+*.png
 
 # Ignore personal notes
 notes.md
