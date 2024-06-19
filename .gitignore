@@ -2,4 +2,12 @@
 .vscode/
 
 # Ignore compiled executables
-simple_http_server
+http_server
+
+# Ignore test files
+.html
+.css
+.js
+.jpg
+.jpeg
+.png
