@@ -7,6 +7,8 @@
 #include <arpa/inet.h>
 #include <thread>
 #include <vector>
+#include <unordered_map>
+#include <sys/stat.h>
 
 const int PORT = 8080;          // The port number the server will listen on.
 const int BUFFER_SIZE = 1024;   // The size of the buffer to store incoming requests.
@@ -51,6 +53,12 @@ std::string getContentType(const std::string& filePath) {
     return "text/plain";  // Default content type
 }
 
+// Function to check if a file exists
+bool fileExists(const std::string& filePath) {
+    struct stat buffer;
+    return (stat(filePath.c_str(), &buffer) == 0);
+}
+
 // Function to handle each client connections
 void handleClient(int client_socket) {
     char buffer[BUFFER_SIZE] = {0};
@@ -62,26 +70,31 @@ void handleClient(int client_socket) {
     // Parse the request to get the file path
     std::string request(buffer);
     std::size_t pos = request.find("GET /");
-    std::string filePath = "index.html";  // Default file
+    std::string urlPath = "/";
     if (pos != std::string::npos) {
-        std::size_t start = pos + 5;  // Length of "GET /"
+        std::size_t start = pos + 4;  // Length of "GET "
         std::size_t end = request.find(" ", start);
-        filePath = request.substr(start, end - start);
-        if (filePath.empty() || filePath == "/") {
-            filePath = "index.html";
-        }
+        urlPath = request.substr(start, end - start);
     }
 
-    // Read the file content
-    std::string fileContent = readFile(filePath);
+    // Determine the file path from the URL path
+    std::string filePath = (urlPath == "/") ? "_site/index.html" : "_site" + urlPath;
+    std::cout << "Requested file path: " << filePath << std::endl; // Debug log
 
-    // Determine content type
-    std::string contentType = getContentType(filePath);
+    // Handle the request by checking if the file exists
+    std::string response;
+    if (fileExists(filePath)) {
+        // Serve the file if it exists
+        std::string fileContent = readFile(filePath);
+        std::string contentType = getContentType(filePath);
+        response = generateHttpResponse(fileContent, contentType);
+    } else {
+        // Serve a 404 Not Found response if the file does not exist
+        std::string fileContent = "404 Not Found";
+        response =  "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n" + fileContent;
+    }
 
-    // Generate response
-    std::string response = generateHttpResponse(fileContent, contentType);
-
-    // Send the response to the client
+    // Send the response
     send(client_socket, response.c_str(), response.size(), 0);
     std::cout << "Response sent\n";
 

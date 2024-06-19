@@ -5,6 +5,7 @@
 http_server
 
 # Ignore test files
+_site/
 *.html
 *.css
 *.js
