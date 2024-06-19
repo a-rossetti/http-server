@@ -11,3 +11,6 @@ http_server
 .jpg
 .jpeg
 .png
+
+# Ignore personal notes
+notes.md

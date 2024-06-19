@@ -7,6 +7,7 @@ This is a simple HTTP server written in C++. It serves static files such as HTML
 - Serves static files (HTML, CSS, JS, images)
 - Automatically opens the default web browser to the server's URL on start
 - Handles different content types based on file extensions
+- Handles multiple concurrent connections using threads
 
 ## Getting Started
 
@@ -25,7 +26,7 @@ This is a simple HTTP server written in C++. It serves static files such as HTML
 
 2. Compile the server:
     ```sh
-    g++ -o http_server http_server.cpp
+    g++ -o http_server http_server.cpp -pthread
     ```
 
 3. Create and place your HTML, CSS, JS, and image files in the same directory as the server executable.

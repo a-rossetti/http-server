@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <arpa/inet.h>
+#include <thread>
+#include <vector>
 
 const int PORT = 8080;          // The port number the server will listen on.
 const int BUFFER_SIZE = 1024;   // The size of the buffer to store incoming requests.
@@ -49,11 +51,48 @@ std::string getContentType(const std::string& filePath) {
     return "text/plain";  // Default content type
 }
 
+// Function to handle each client connections
+void handleClient(int client_socket) {
+    char buffer[BUFFER_SIZE] = {0};
+
+    // Read the request
+    read(client_socket, buffer, BUFFER_SIZE);
+    std::cout << "Received request:\n" << buffer << std::endl;
+
+    // Parse the request to get the file path
+    std::string request(buffer);
+    std::size_t pos = request.find("GET /");
+    std::string filePath = "index.html";  // Default file
+    if (pos != std::string::npos) {
+        std::size_t start = pos + 5;  // Length of "GET /"
+        std::size_t end = request.find(" ", start);
+        filePath = request.substr(start, end - start);
+        if (filePath.empty() || filePath == "/") {
+            filePath = "index.html";
+        }
+    }
+
+    // Read the file content
+    std::string fileContent = readFile(filePath);
+
+    // Determine content type
+    std::string contentType = getContentType(filePath);
+
+    // Generate response
+    std::string response = generateHttpResponse(fileContent, contentType);
+
+    // Send the response to the client
+    send(client_socket, response.c_str(), response.size(), 0);
+    std::cout << "Response sent\n";
+
+    // Close the socket
+    close(client_socket);
+}
+
 int main() {
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-    char buffer[BUFFER_SIZE] = {0};
 
     // Create socket file descriptor.
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -98,6 +137,8 @@ int main() {
     #endif
     system(command.c_str());
 
+    std::vector<std::thread> threads;
+
     // Accept connections and handle client requests.
     while (true) {
         // Accepting a connection
@@ -107,39 +148,15 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
-        // Read the request
-        read(new_socket, buffer, BUFFER_SIZE);
-        std::cout << "Received request:\n" << buffer << std::endl;
+        // Create a new thread to handle the client
+        threads.emplace_back(handleClient, new_socket);
+    }
 
-        // Parse the request to get the file path
-        std::string request(buffer);
-        std::size_t pos = request.find("GET /");
-        std::string filePath = "index.html";  // Default file
-        if (pos != std::string::npos) {
-            std::size_t start = pos + 5;  // Length of "GET /"
-            std::size_t end = request.find(" ", start);
-            filePath = request.substr(start, end - start);
-            if (filePath.empty() || filePath == "/") {
-                filePath = "index.html";
-            }
+    // Join all threads before exiting
+    for (std::thread &thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
         }
-
-        // Read the file content
-        std::string fileContent = readFile(filePath);
-
-        // Determine content type
-        std::string contentType = getContentType(filePath);
-
-        // Generate response
-        std::string response = generateHttpResponse(fileContent, contentType);
-
-        // Send the response to the client
-        send(new_socket, response.c_str(), response.size(), 0);
-        std::cout << "Response sent\n";
-
-        // Close the socket
-        close(new_socket);
-
     }
 
     return 0;
