@@ -1,0 +1,5 @@
+# Ignore Visual Studio Code settings folder
+.vscode/
+
+# Ignore compiled executables
+simple_http_server
