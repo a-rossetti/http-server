@@ -28,10 +28,6 @@ std::string generateHttpResponse(const std::string& content, const std::string& 
 // Function to read file content
 std::string readFile(const std::string& filePath) {
     std::ifstream file(filePath);
-    if (!file.is_open()) {
-        return "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nFile Not Found";
-    }
-
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -79,24 +75,27 @@ void handleClient(int client_socket) {
 
     // Determine the file path from the URL path
     std::string filePath = (urlPath == "/") ? "_site/index.html" : "_site" + urlPath;
-    std::cout << "Requested file path: " << filePath << std::endl; // Debug log
+    std::cout << "Requested file path: " << filePath << std::endl;  // Debug log
 
-    // Handle the request by checking if the file exists
+    // Read the file content (or 404 error content)
+    std::string fileContent;
+    std::string contentType;
     std::string response;
     if (fileExists(filePath)) {
-        // Serve the file if it exists
-        std::string fileContent = readFile(filePath);
-        std::string contentType = getContentType(filePath);
-        response = generateHttpResponse(fileContent, contentType);
+        fileContent = readFile(filePath);
+        contentType = getContentType(filePath);
     } else {
-        // Serve a 404 Not Found response if the file does not exist
-        std::string fileContent = "404 Not Found";
-        response =  "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n" + fileContent;
+        fileContent = "<html><head><title>404 Not Found</title></head><body>"
+                                  "<h1>404 Not Found</h1>"
+                                  "<p>The requested URL " + filePath + " was not found on this server.</p>"
+                                  "</body></html>";
+        contentType = "text/html";
     }
-
+    response = generateHttpResponse(fileContent, contentType);
+    
     // Send the response
     send(client_socket, response.c_str(), response.size(), 0);
-    std::cout << "Response sent\n";
+    std::cout << "Response sent\n";  // Debug log
 
     // Close the socket
     close(client_socket);
